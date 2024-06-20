@@ -39,10 +39,5 @@ async def checkquota(method):
 
 @app.post("/twitch-handler")
 @app.post("/twitch-handler/")
-async def handle_message(data: TwitchMessage)  -> ResponseMessage:
-    q = data.q
-    target = data.target.value.upper()
-    source = data.source.value.upper()
-    user = data.user
-    api = data.method
+async def handle_message(data: TwitchMessage, status_code=200)  -> ResponseMessage:
     return "what a mess"
