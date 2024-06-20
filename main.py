@@ -3,8 +3,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from pprint import pprint
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from pydantic import BaseModel
+from fastapi.responses import JSONResponse
 from enum import Enum
 import time
 import os
@@ -40,4 +41,10 @@ async def checkquota(method):
 @app.post("/twitch-handler")
 @app.post("/twitch-handler/")
 async def handle_message(data: TwitchMessage, status_code=200)  -> ResponseMessage:
-    return "what a mess"
+    if "challenge" in data:
+        rdata = data["challenge"]
+    return Response(content=rdata, media_type="text/plain", status_code=200, headers=[len(rdata)])
+
+    content = {"message": "Hello World"}
+    headers = {"X-Cat-Dog": "alone in the world", "Content-Language": "en-US"}
+    return JSONResponse(content=content, headers=headers)
