@@ -1,0 +1,13 @@
+[Unit]
+Description=Twitch Handler API
+After=network.target
+
+[Service]
+User=seer
+Group=www-data
+WorkingDirectory=/home/seer/twitch-handler
+ExecStart=/home/seer/twitch-handler/venv/bin/uvicorn main:app --host 127.0.0.1 --port 8002
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
