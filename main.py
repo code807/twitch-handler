@@ -8,8 +8,6 @@ from pydantic import BaseModel
 from enum import Enum
 import time
 import os
-import sqlite3
-import aiosqlite
 import requests
 
 twitch_key = os.environ['TWITCH_API_KEY']
