@@ -12,11 +12,8 @@ import requests
 
 twitch_key = os.environ['TWITCH_API_KEY']
 
-class ResponseMessage(BaseModel):
-    response: str
-
-class TwitchMessage(BaseModel):
-    subscription: SubscriptionData
+class BroadcasterUserID():
+    broadcaster_user_id: str
 
 class SubscriptionData(BaseModel):
     id: str | None = None
@@ -26,8 +23,11 @@ class SubscriptionData(BaseModel):
     cost: int
     condition: BroadcasterUserID
 
-class BroadcasterUserID():
-    broadcaster_user_id: str
+class ResponseMessage(BaseModel):
+    response: str
+
+class TwitchMessage(BaseModel):
+    subscription: SubscriptionData
 
 async def checkquota() -> bool:
     return True
