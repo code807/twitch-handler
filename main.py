@@ -12,7 +12,7 @@ import requests
 
 twitch_key = os.environ['TWITCH_API_KEY']
 
-class BroadcasterUserID():
+class BroadcasterUserID(BaseModel):
     broadcaster_user_id: str
 
 class SubscriptionData(BaseModel):
