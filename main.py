@@ -46,13 +46,7 @@ async def get_header(request: Request):
 async def get_body(request: Request):
     return await request.body()
 
-async def checkquota() -> bool:
-    return True
-
 app = FastAPI()
-
-async def checkquota(method):
-    return True
 
 @app.post("/twitch-handler")
 @app.post("/twitch-handler/")
