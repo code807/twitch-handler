@@ -11,8 +11,9 @@ import time
 import os
 import requests
 import hmac
+import hashlib
 
-twitch_key = os.environ['TWITCH_API_KEY']
+secretkey = bytes(os.environ['TWITCH_SECRET'], 'utf-8')
 
 class BroadcasterUserID(BaseModel):
     broadcaster_user_id: str
@@ -32,6 +33,13 @@ class TwitchMessage(BaseModel):
     challenge: str | None = None
     subscription: SubscriptionData
 
+def generate_hmac(message):
+    return "sha256="+hmac.new(secretkey, message, hashlib.sha256).hexdigest()
+
+def verify_hmac(message, received_hmac):
+    generated_hmac = generate_hmac(message)
+    return hmac.compare_digest(generated_hmac, received_hmac)
+
 async def get_header(request: Request):
     return request.headers
 
@@ -48,17 +56,24 @@ async def checkquota(method):
 
 @app.post("/twitch-handler")
 @app.post("/twitch-handler/")
-async def handle_message(data: TwitchMessage, headers: bytes = Depends(get_header), body = Depends(get_body), status_code=200): #  -> ResponseMessage:
-    return headers
-    pprint(data)
-    rdata = pformat(data)
-    if data.challenge:
-        rdata = data.challenge
-    headers = {
-        "Content-Length":str(len(rdata))
-    }
-    return Response(content=rdata, media_type="text/plain", status_code=200, headers=headers)
-
-    content = {"message": "Hello World"}
-    headers = {"X-Cat-Dog": "alone in the world", "Content-Language": "en-US"}
-    return JSONResponse(content=content, headers=headers)
+async def handle_message(data: TwitchMessage, headers: bytes = Depends(get_header), body = Depends(get_body), status_code=200): # -> ResponseMessage:
+    if (set(headers.keys()) >= {"twitch-eventsub-message-id", "twitch-eventsub-message-timestamp", "twitch-eventsub-message-signature"}):
+        id = headers.get('twitch-eventsub-message-id')
+        timestamp = headers.get('twitch-eventsub-message-timestamp')
+        text = bytes.decode(body, 'utf-8')
+        message = bytes(id+timestamp+text, 'utf-8')
+        if verify_hmac(
+            message,
+            headers["twitch-eventsub-message-signature"]
+        ):
+            rdata = pformat(data)
+            if data.challenge:
+                rdata = data.challenge
+            headers = {
+                "Content-Length":str(len(rdata))
+            }
+            return Response(content=rdata, media_type="text/plain", status_code=200, headers=headers)
+        else:
+            return Response(content="Secret Key Invalid", media_type="text/plain", status_code=401)
+    else:
+        return Response(content="Missing Required EventSub Arguments", media_type="text/plain", status_code=412)
