@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from pprint import pprint, pformat
-from fastapi import FastAPI, Request, Response, Depends
+from fastapi import FastAPI, Request, Response, Depends, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from fastapi.responses import JSONResponse
 from enum import Enum
@@ -13,6 +13,7 @@ import requests
 import hmac
 import hashlib
 
+clients = []
 secretkey = bytes(os.environ['TWITCH_SECRET'], 'utf-8')
 
 class BroadcasterUserID(BaseModel):
@@ -71,3 +72,20 @@ async def handle_message(data: TwitchMessage, headers: bytes = Depends(get_heade
             return Response(content="Secret Key Invalid", media_type="text/plain", status_code=401)
     else:
         return Response(content="Missing Required EventSub Arguments", media_type="text/plain", status_code=412)
+
+async def broadcast(message: dict):
+    for client in clients:
+        try:
+            await client.send_json(message)
+        except WebSocketDisconnect:
+            clients.remove(client)
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    clients.append(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+    except WebSocketDisconnect:
+        clients.remove(websocket)
