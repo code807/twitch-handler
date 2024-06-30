@@ -4,6 +4,7 @@ load_dotenv()
 
 from pprint import pprint, pformat
 from fastapi import FastAPI, Request, Response, Depends, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from fastapi.responses import JSONResponse
 from enum import Enum
@@ -67,6 +68,12 @@ async def handle_message(data: TwitchMessage, headers: bytes = Depends(get_heade
             headers = {
                 "Content-Length":str(len(rdata))
             }
+            await broadcast(
+                {
+                    "type":data.subscription.type,
+                    "user":data.subscription.condition.broadcaster_user_id
+                }
+            )
             return Response(content=rdata, media_type="text/plain", status_code=200, headers=headers)
         else:
             return Response(content="Secret Key Invalid", media_type="text/plain", status_code=401)
@@ -81,6 +88,7 @@ async def broadcast(message: dict):
             clients.remove(client)
 
 @app.websocket("/ws")
+@app.websocket("/ws/")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     clients.append(websocket)
